@@ -1,6 +1,9 @@
 const crypto = require("crypto");
 const algorithm = "aes-256-cbc";
-const SECRET_KEY = "Thisisascretkeytotestaaaaaaaaaaa";
+const SECRET_KEY = crypto
+  .createHash("sha256")
+  .update("my32charpassword123456789")
+  .digest();
 const iv = crypto.randomBytes(16);
 
 export const encryptData = (data: string): string => {

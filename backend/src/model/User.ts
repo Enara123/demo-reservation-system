@@ -4,9 +4,11 @@ import { Role } from "./Role"; // Import the Role model
 
 export class User extends Model {
   public id!: number;
-  public username!: string;
+  public email!: string;
   public password!: string;
-  public roleId!: number; // Foreign key reference to Role
+  public roleId!: number;
+  public otp!: string | null;
+  public otpExpiresAt!: Date | null;
 }
 
 User.init(
@@ -16,7 +18,7 @@ User.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    username: {
+    email: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
@@ -32,6 +34,14 @@ User.init(
         model: Role, // 'Role' would also work
         key: "id",
       },
+    },
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    otpExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {
