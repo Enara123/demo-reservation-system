@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TextField,
   Button,
@@ -16,6 +16,7 @@ import {
   ListItemText,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import LogoutButton from "../components/Logout";
 
 const ReservationPage: React.FC = () => {
   const [roomType, setRoomType] = useState("");
@@ -24,27 +25,83 @@ const ReservationPage: React.FC = () => {
   const [contact, setContact] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [open, setOpen] = useState(false);
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [error, setError] = useState<string>("");
 
-  const handleReservation = () => {
-    // Logic to handle the reservation, such as sending the data to the backend
+  const handleReservation = async () => {
+    const reservationData = {
+      roomType: roomType,
+      reservationDate: date,
+      name,
+      contactNumber: contact,
+      paymentMethod,
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/reserve", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": localStorage.getItem("token") || "",
+        },
+        body: JSON.stringify(reservationData),
+      });
+      console.log(reservationData);
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Reservation successful!");
+        // Optionally, fetch reservations again
+        // fetchReservations();
+      } else {
+        setError(data.msg || "Error making reservation");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setError("Error making reservation");
+    }
   };
-
-  const reservations = [
-    { id: 1, roomType: "Single Room", date: "2024-08-20", status: "Pending" },
-    { id: 2, roomType: "Suite", date: "2024-07-15", status: "Completed" },
-    { id: 3, roomType: "Double Room", date: "2024-06-10", status: "Cancelled" },
-  ];
 
   const handleToggle = () => {
     setOpen(!open);
   };
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:5000/api/auth/reservations",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-auth-token": localStorage.getItem("token") || "",
+            },
+          }
+        );
+
+        const data = await response.json();
+        if (response.ok) {
+          setReservations(data.reservations || []);
+        } else {
+          setError(data.msg || "Error fetching reservations");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setError("Error fetching reservations");
+      }
+    };
+
+    fetchReservations();
+  }, []);
 
   return (
     <Container maxWidth="sm">
       <Typography variant="h4" align="center" gutterBottom>
         Reserve a Room
       </Typography>
-
+      <LogoutButton />
       <Box component="form" noValidate autoComplete="off">
         <TextField
           label="Room Type"
@@ -114,6 +171,7 @@ const ReservationPage: React.FC = () => {
         >
           Reserve
         </Button>
+        {error && <Typography color="error">{error}</Typography>}
       </Box>
 
       <Box
@@ -136,7 +194,7 @@ const ReservationPage: React.FC = () => {
               <ListItem key={reservation.id}>
                 <ListItemText
                   primary={`${reservation.roomType}`}
-                  secondary={`Date: ${reservation.date} - Status: ${reservation.status}`}
+                  secondary={`Date: ${reservation.date}`}
                 />
               </ListItem>
             ))}
